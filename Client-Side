@@ -1,0 +1,84 @@
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+local RS = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local triggerEvent = RS:WaitForChild("Trigger")
+local hitLanded = RS:WaitForChild("HitLanded")
+
+local ContentProvider = game:GetService("ContentProvider")
+local animFolder = RS:WaitForChild("Animations")
+
+task.spawn(function()
+	ContentProvider:PreloadAsync(animFolder:GetChildren())
+end)
+
+local function shakeCamera(intensity, duration)
+	local startTime = tick()
+	local humanoid = Character:WaitForChild("Humanoid")
+
+	-- Run a loop until the duration is over
+	task.spawn(function()
+		while tick() - startTime < duration do
+			local x = math.random(-intensity, intensity) / 10
+			local y = math.random(-intensity, intensity) / 10
+			local z = math.random(-intensity, intensity) / 10
+
+			humanoid.CameraOffset = Vector3.new(x, y, z)
+			task.wait(0.01) -- Very fast movement
+		end
+		-- Reset camera to normal
+		humanoid.CameraOffset = Vector3.new(0, 0, 0)
+	end)
+end
+
+local combat = 1
+local db = false
+
+local nextAttackQueued = false
+
+-- In your LocalScript
+local animator = Humanoid:WaitForChild("Animator")
+
+-- Pre-load animations to prevent stuttering
+local animObjects = RS:WaitForChild("Animations"):GetChildren()
+local loadedAnims = {}
+
+--for _, anim in pairs(animObjects) do
+--	loadedAnims[tonumber(anim.Name)] = animator:LoadAnimation(anim)
+--end
+
+local LUNGE_FORCE = 15
+UIS.InputBegan:Connect(function(input, isTyping)
+	if isTyping or db then return end
+
+	if input.KeyCode == Enum.KeyCode.F then
+		db = true
+
+		local rootPart = Character:WaitForChild("HumanoidRootPart")
+
+		local attachment = Instance.new("Attachment", rootPart)
+		local linearVelocity = Instance.new("LinearVelocity", rootPart)
+
+		linearVelocity.MaxForce = 100000 -- High enough to move the character
+		linearVelocity.VectorVelocity = rootPart.CFrame.LookVector * LUNGE_FORCE
+		linearVelocity.Attachment0 = attachment
+
+		game:GetService("Debris"):AddItem(linearVelocity, 0.15)
+		game:GetService("Debris"):AddItem(attachment, 0.15)
+
+		local currentAnim = loadedAnims[combat]
+		if currentAnim then
+			currentAnim:Play()
+		end
+
+		shakeCamera(1, 0.1)
+		triggerEvent:FireServer(combat)
+
+		combat = (combat % 5) + 1
+		task.wait(0.35)
+		db = false
+	end
+end)
