@@ -1,0 +1,26 @@
+local char = script.Parent
+local lArm = char:WaitForChild("Left Arm")
+local rArm = char:WaitForChild("Right Arm")
+
+local function setupTrail(arm)
+	local a0 = Instance.new("Attachment", arm)
+	a0.Name = "TrailAtt0"
+	a0.Position = Vector3.new(0, 0.5, 0)
+
+	local a1 = Instance.new("Attachment", arm)
+	a1.Name = "TrailAtt1"
+	a1.Position = Vector3.new(0, -0.5, 0)
+
+	local trail = Instance.new("Trail")
+	trail.Name = "CombatTrail"
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	trail.Enabled = false -- Keep it off by default
+	trail.Lifetime = 0.2
+	trail.Transparency = NumberSequence.new(0.4, 1)
+	trail.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255)) -- White trail
+	trail.Parent = arm
+end
+
+setupTrail(lArm)
+setupTrail(rArm)
